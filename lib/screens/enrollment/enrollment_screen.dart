@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/data_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/count_badge.dart';
+import '../../widgets/empty_state_view.dart';
+import '../../widgets/initials_avatar.dart';
 
 /// Premium enrollment management screen.
 class EnrollmentScreen extends StatefulWidget {
@@ -61,8 +64,11 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
                                   color: Colors.white.withAlpha(20),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(Icons.how_to_reg_rounded,
-                                    color: Colors.white, size: 22),
+                                child: const Icon(
+                                  Icons.how_to_reg_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               const Text(
@@ -102,9 +108,13 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
                               labelColor: AppTheme.warning,
                               unselectedLabelColor: Colors.white70,
                               labelStyle: const TextStyle(
-                                  fontWeight: FontWeight.w600, fontSize: 13.5),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13.5,
+                              ),
                               unselectedLabelStyle: const TextStyle(
-                                  fontWeight: FontWeight.w500, fontSize: 13),
+                                fontWeight: FontWeight.w500,
+                                fontSize: 13,
+                              ),
                               dividerHeight: 0,
                               tabs: const [
                                 Tab(text: 'Enroll Students'),
@@ -147,6 +157,7 @@ class _EnrollTab extends StatelessWidget {
   final DataProvider dp;
   final String? selectedId;
   final ValueChanged<String?> onChanged;
+
   const _EnrollTab({
     required this.dp,
     required this.selectedId,
@@ -159,41 +170,16 @@ class _EnrollTab extends StatelessWidget {
     final courses = dp.courses;
 
     if (students.isEmpty || courses.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppTheme.warningLight,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.warning_amber_rounded,
-                    color: AppTheme.warning, size: 40),
-              ),
-              const SizedBox(height: 20),
-              const Text('Cannot Enroll',
-                  style: TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              Text(
-                students.isEmpty && courses.isEmpty
-                    ? 'Add students and courses first'
-                    : students.isEmpty
-                        ? 'Add students first'
-                        : 'Add courses first',
-                style: const TextStyle(
-                    color: AppTheme.textSecondary, fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+      return EmptyStateView(
+        icon: Icons.warning_amber_rounded,
+        iconColor: AppTheme.warning,
+        circleBackgroundColor: AppTheme.warningLight,
+        title: 'Cannot Enroll',
+        subtitle: students.isEmpty && courses.isEmpty
+            ? 'Add students and courses first'
+            : students.isEmpty
+                ? 'Add students first'
+                : 'Add courses first',
       );
     }
 
@@ -206,7 +192,7 @@ class _EnrollTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Step 1
-          _StepBadge(step: '1', title: 'Select Student'),
+          const _StepBadge(step: '1', title: 'Select Student'),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -222,45 +208,45 @@ class _EnrollTab extends StatelessWidget {
                 isExpanded: true,
                 dropdownColor: Colors.white,
                 borderRadius: BorderRadius.circular(14),
-                hint: const Text('Choose a student...',
-                    style: TextStyle(color: AppTheme.textHint, fontSize: 14)),
+                hint: const Text(
+                  'Choose a student...',
+                  style: TextStyle(color: AppTheme.textHint, fontSize: 14),
+                ),
                 items: students.map((s) {
                   return DropdownMenuItem(
                     value: s.id,
-                    child: Row(children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.accentGradient,
-                          borderRadius: BorderRadius.circular(9),
+                    child: Row(
+                      children: [
+                        InitialsAvatar(
+                          text: s.name,
+                          size: 32,
+                          borderRadius: 9,
+                          fontSize: 14,
                         ),
-                        child: Center(
-                          child: Text(
-                            s.name.isNotEmpty ? s.name[0].toUpperCase() : '?',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14),
-                          ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              s.name,
+                              style: const TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              s.id,
+                              style: const TextStyle(
+                                color: AppTheme.textHint,
+                                fontSize: 11.5,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(s.name,
-                              style: const TextStyle(
-                                  color: AppTheme.textPrimary,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500)),
-                          Text(s.id,
-                              style: const TextStyle(
-                                  color: AppTheme.textHint, fontSize: 11.5)),
-                        ],
-                      ),
-                    ]),
+                      ],
+                    ),
                   );
                 }).toList(),
                 onChanged: onChanged,
@@ -271,7 +257,7 @@ class _EnrollTab extends StatelessWidget {
           const SizedBox(height: 28),
 
           // Step 2
-          _StepBadge(step: '2', title: 'Select Courses'),
+          const _StepBadge(step: '2', title: 'Select Courses'),
           const SizedBox(height: 12),
 
           if (selected == null)
@@ -279,8 +265,10 @@ class _EnrollTab extends StatelessWidget {
               padding: const EdgeInsets.all(28),
               decoration: AppTheme.subtleCard,
               child: const Center(
-                child: Text('Please select a student first',
-                    style: TextStyle(color: AppTheme.textHint, fontSize: 14)),
+                child: Text(
+                  'Please select a student first',
+                  style: TextStyle(color: AppTheme.textHint, fontSize: 14),
+                ),
               ),
             )
           else
@@ -340,35 +328,35 @@ class _EnrollTab extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(c.courseName,
-                                  style: TextStyle(
-                                      color: enrolled
-                                          ? AppTheme.textPrimary
-                                          : AppTheme.textSecondary,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14)),
+                              Text(
+                                c.courseName,
+                                style: TextStyle(
+                                  color: enrolled
+                                      ? AppTheme.textPrimary
+                                      : AppTheme.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
                               const SizedBox(height: 2),
                               Text(
-                                  '${c.courseCode}  •  ${c.credits} credits',
-                                  style: const TextStyle(
-                                      color: AppTheme.textHint,
-                                      fontSize: 12)),
+                                '${c.courseCode}  •  ${c.credits} credits',
+                                style: const TextStyle(
+                                  color: AppTheme.textHint,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                         if (enrolled)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
+                          const CountBadge(
+                            count: 1,
+                            singularLabel: 'Enrolled',
+                            pluralLabel: 'Enrolled',
+                            activeColor: AppTheme.success,
+                            padding: EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: AppTheme.success.withAlpha(15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text('Enrolled',
-                                style: TextStyle(
-                                    color: AppTheme.success,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600)),
                           ),
                       ],
                     ),
@@ -395,20 +383,10 @@ class _ViewTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final students = dp.students;
     if (students.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.people_outline_rounded,
-                color: AppTheme.textHint, size: 48),
-            SizedBox(height: 16),
-            Text('No students added',
-                style: TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600)),
-          ],
-        ),
+      return const EmptyStateView(
+        icon: Icons.people_outline_rounded,
+        title: 'No students added',
+        subtitle: 'Add students to see their enrollments',
       );
     }
 
@@ -427,38 +405,31 @@ class _ViewTab extends StatelessWidget {
             boxShadow: AppTheme.softShadow,
           ),
           child: Theme(
-            data: Theme.of(context)
-                .copyWith(dividerColor: Colors.transparent),
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
               tilePadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              leading: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  gradient: AppTheme.accentGradient,
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Center(
-                  child: Text(
-                    s.name.isNotEmpty ? s.name[0].toUpperCase() : '?',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 17),
-                  ),
+              leading: InitialsAvatar(
+                text: s.name,
+                size: 44,
+                borderRadius: 13,
+                fontSize: 17,
+              ),
+              title: Text(
+                s.name,
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
                 ),
               ),
-              title: Text(s.name,
-                  style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15)),
               subtitle: Text(
                 '${s.id}  •  ${courses.length} course${courses.length != 1 ? 's' : ''}',
                 style: const TextStyle(
-                    color: AppTheme.textHint, fontSize: 12.5),
+                  color: AppTheme.textHint,
+                  fontSize: 12.5,
+                ),
               ),
               iconColor: AppTheme.textSecondary,
               collapsedIconColor: AppTheme.textHint,
@@ -466,11 +437,14 @@ class _ViewTab extends StatelessWidget {
                 if (courses.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Text('Not enrolled in any courses',
-                        style: TextStyle(
-                            color: AppTheme.textHint,
-                            fontSize: 13,
-                            fontStyle: FontStyle.italic)),
+                    child: Text(
+                      'Not enrolled in any courses',
+                      style: TextStyle(
+                        color: AppTheme.textHint,
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
                   )
                 else
                   ...courses.map(
@@ -481,35 +455,40 @@ class _ViewTab extends StatelessWidget {
                         color: AppTheme.surfaceLight,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Row(children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppTheme.success.withAlpha(15),
-                            borderRadius: BorderRadius.circular(8),
+                      child: Row(
+                        children: [
+                          InitialsAvatar(
+                            icon: Icons.auto_stories_rounded,
+                            gradient: AppTheme.greenGradient,
+                            size: 32,
+                            borderRadius: 8,
+                            iconSize: 16,
                           ),
-                          child: const Icon(Icons.auto_stories_rounded,
-                              color: AppTheme.success, size: 16),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(c.courseName,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  c.courseName,
                                   style: const TextStyle(
-                                      color: AppTheme.textPrimary,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 13.5)),
-                              Text(
+                                    color: AppTheme.textPrimary,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 13.5,
+                                  ),
+                                ),
+                                Text(
                                   '${c.courseCode}  •  ${c.credits} credits',
                                   style: const TextStyle(
-                                      color: AppTheme.textHint,
-                                      fontSize: 11.5)),
-                            ],
+                                    color: AppTheme.textHint,
+                                    fontSize: 11.5,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ]),
+                        ],
+                      ),
                     ),
                   ),
               ],
@@ -530,28 +509,36 @@ class _StepBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          gradient: AppTheme.orangeGradient,
-          borderRadius: BorderRadius.circular(9),
-        ),
-        child: Center(
-          child: Text(step,
+    return Row(
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            gradient: AppTheme.orangeGradient,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Center(
+            child: Text(
+              step,
               style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15)),
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+          ),
         ),
-      ),
-      const SizedBox(width: 10),
-      Text(title,
+        const SizedBox(width: 10),
+        Text(
+          title,
           style: const TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 15,
-              fontWeight: FontWeight.w700)),
-    ]);
+            color: AppTheme.textPrimary,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
   }
 }

@@ -1,19 +1,38 @@
 import 'package:flutter/material.dart';
 import '../models/course.dart';
 import '../models/student.dart';
+import '../repositories/implementations/in_memory_course_repository.dart';
+import '../repositories/implementations/in_memory_enrollment_repository.dart';
+import '../repositories/implementations/in_memory_student_repository.dart';
 import '../repositories/interfaces/course_repository_interface.dart';
 import '../repositories/interfaces/enrollment_repository_interface.dart';
 import '../repositories/interfaces/student_repository_interface.dart';
 import '../services/sample_data_service.dart';
 
-/// Central State Management Provider (DIP / SRP / OCP).
-/// Coordinates reactive UI updates while depending strictly on abstractions.
+/// Central State Management Provider (DIP / SRP / OCP / DRY).
+/// Coordinates reactive UI updates while depending strictly on repository abstractions.
 class DataProvider extends ChangeNotifier {
   final IStudentRepository studentRepo;
   final ICourseRepository courseRepo;
   final IEnrollmentRepository enrollmentRepo;
 
-  DataProvider({
+  factory DataProvider({
+    IStudentRepository? studentRepo,
+    ICourseRepository? courseRepo,
+    IEnrollmentRepository? enrollmentRepo,
+  }) {
+    final sRepo = studentRepo ?? InMemoryStudentRepository();
+    final cRepo = courseRepo ?? InMemoryCourseRepository();
+    final eRepo = enrollmentRepo ??
+        InMemoryEnrollmentRepository(studentRepository: sRepo);
+    return DataProvider._internal(
+      studentRepo: sRepo,
+      courseRepo: cRepo,
+      enrollmentRepo: eRepo,
+    );
+  }
+
+  DataProvider._internal({
     required this.studentRepo,
     required this.courseRepo,
     required this.enrollmentRepo,

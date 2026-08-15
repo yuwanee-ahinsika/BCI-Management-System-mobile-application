@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import '../../models/student.dart';
 import '../../providers/data_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/confirm_delete_dialog.dart';
-import '../../widgets/custom_search_bar.dart';
+import '../../utils/app_dialogs.dart';
+import '../../utils/app_snackbar.dart';
+import '../../widgets/action_icon_button.dart';
+import '../../widgets/count_badge.dart';
 import '../../widgets/empty_state_view.dart';
-import 'student_detail_screen.dart';
+import '../../widgets/gradient_search_header.dart';
+import '../../widgets/initials_avatar.dart';
 import 'student_form_screen.dart';
+import 'student_detail_screen.dart';
 
-/// Student list screen utilizing modular widgets (SRP / SOLID).
+/// Student list screen utilizing modular widgets (SRP / DRY).
 class StudentListScreen extends StatefulWidget {
   const StudentListScreen({super.key});
 
@@ -38,74 +42,15 @@ class _StudentListScreenState extends State<StudentListScreen> {
           body: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // ─── Header ───
-              SliverToBoxAdapter(
-                child: Container(
-                  decoration:
-                      const BoxDecoration(gradient: AppTheme.primaryGradient),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withAlpha(20),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(Icons.school_rounded,
-                                    color: Colors.white, size: 22),
-                              ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                'Students',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                              const Spacer(),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withAlpha(20),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  '${dp.students.length} total',
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 18),
-                          // Reusable Custom Search Bar
-                          CustomSearchBar(
-                            controller: _searchController,
-                            hintText: 'Search by name, ID or email...',
-                            onChanged: (v) => setState(() => _searchQuery = v),
-                            onClear: () {
-                              _searchController.clear();
-                              setState(() => _searchQuery = '');
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+              // ─── Reusable Gradient Search Header ───
+              SliverGradientSearchHeader(
+                gradient: AppTheme.primaryGradient,
+                icon: Icons.school_rounded,
+                title: 'Students',
+                totalCount: dp.students.length,
+                searchController: _searchController,
+                searchHint: 'Search by name, ID or email...',
+                onSearchChanged: (v) => setState(() => _searchQuery = v),
               ),
 
               // ─── Results Label ───
@@ -115,9 +60,10 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   child: Text(
                     '${students.length} student${students.length != 1 ? 's' : ''} found',
                     style: const TextStyle(
-                        color: AppTheme.textHint,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500),
+                      color: AppTheme.textHint,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
@@ -148,29 +94,20 @@ class _StudentListScreenState extends State<StudentListScreen> {
                         child: _StudentCard(
                           student: s,
                           onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) =>
-                                      StudentDetailScreen(studentId: s.id))),
-                          onEdit: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) =>
-                                      StudentFormScreen(studentId: s.id))),
-                          onDelete: () => ConfirmDeleteDialog.show(
                             context,
-                            title: 'Delete Student',
-                            content:
-                                'Delete "${s.name}"? This cannot be undone.',
-                            onConfirm: () {
-                              dp.deleteStudent(s.id);
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                content: Text('${s.name} deleted'),
-                                backgroundColor: AppTheme.error,
-                              ));
-                            },
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  StudentDetailScreen(studentId: s.id),
+                            ),
                           ),
+                          onEdit: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  StudentFormScreen(studentId: s.id),
+                            ),
+                          ),
+                          onDelete: () => _confirmDelete(context, dp, s),
                         ),
                       );
                     },
@@ -183,18 +120,32 @@ class _StudentListScreenState extends State<StudentListScreen> {
           ),
           floatingActionButton: FloatingActionButton(
             heroTag: 'add_student',
-            onPressed: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const StudentFormScreen())),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const StudentFormScreen()),
+            ),
             child: const Icon(Icons.add_rounded, size: 28),
           ),
         );
       },
     );
   }
+
+  void _confirmDelete(BuildContext context, DataProvider dp, Student s) {
+    showDeleteConfirmDialog(
+      context: context,
+      title: 'Delete Student',
+      message: 'Delete "${s.name}"? This cannot be undone.',
+      onConfirm: () {
+        dp.deleteStudent(s.id);
+        showErrorSnackBar(context, '${s.name} deleted');
+      },
+    );
+  }
 }
 
 class _StudentCard extends StatelessWidget {
-  final dynamic student;
+  final Student student;
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -208,7 +159,8 @@ class _StudentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final enrolled = student.enrolledCourseIds.length as int;
+    final enrolled = student.enrolledCourseIds.length;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -216,29 +168,13 @@ class _StudentCard extends StatelessWidget {
         decoration: AppTheme.subtleCard,
         child: Row(
           children: [
-            // Avatar
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                gradient: AppTheme.accentGradient,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Center(
-                child: Text(
-                  student.name.isNotEmpty
-                      ? student.name[0].toUpperCase()
-                      : '?',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
+            InitialsAvatar(
+              text: student.name,
+              size: 50,
+              borderRadius: 14,
+              fontSize: 20,
             ),
             const SizedBox(width: 14),
-            // Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,14 +200,19 @@ class _StudentCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Row(
                     children: [
-                      const Icon(Icons.email_outlined,
-                          size: 13, color: AppTheme.textHint),
+                      const Icon(
+                        Icons.email_outlined,
+                        size: 13,
+                        color: AppTheme.textHint,
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           student.email,
                           style: const TextStyle(
-                              color: AppTheme.textHint, fontSize: 12),
+                            color: AppTheme.textHint,
+                            fontSize: 12,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -280,71 +221,37 @@ class _StudentCard extends StatelessWidget {
                 ],
               ),
             ),
-            // Actions
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: enrolled > 0
-                        ? AppTheme.success.withAlpha(15)
-                        : AppTheme.surfaceLight,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '$enrolled courses',
-                    style: TextStyle(
-                      color:
-                          enrolled > 0 ? AppTheme.success : AppTheme.textHint,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                CountBadge(
+                  count: enrolled,
+                  singularLabel: 'course',
+                  pluralLabel: 'courses',
+                  activeColor: AppTheme.success,
                 ),
                 const SizedBox(height: 10),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _IconBtn(
-                        icon: Icons.edit_outlined,
-                        color: AppTheme.accent,
-                        onTap: onEdit),
+                    ActionIconButton(
+                      icon: Icons.edit_outlined,
+                      color: AppTheme.accent,
+                      onTap: onEdit,
+                      tooltip: 'Edit',
+                    ),
                     const SizedBox(width: 2),
-                    _IconBtn(
-                        icon: Icons.delete_outline_rounded,
-                        color: AppTheme.error,
-                        onTap: onDelete),
+                    ActionIconButton(
+                      icon: Icons.delete_outline_rounded,
+                      color: AppTheme.error,
+                      onTap: onDelete,
+                      tooltip: 'Delete',
+                    ),
                   ],
                 ),
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _IconBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _IconBtn(
-      {required this.icon, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Icon(icon, size: 19, color: color),
         ),
       ),
     );

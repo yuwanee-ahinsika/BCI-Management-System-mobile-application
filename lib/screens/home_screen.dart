@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import '../models/course.dart';
+import '../models/student.dart';
 import '../providers/data_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/count_badge.dart';
+import '../widgets/initials_avatar.dart';
 import '../widgets/section_header.dart';
+import 'students/student_list_screen.dart';
 import 'courses/course_list_screen.dart';
 import 'enrollment/enrollment_screen.dart';
-import 'students/student_list_screen.dart';
 
 /// Main screen with premium bottom navigation.
 class HomeScreen extends StatefulWidget {
@@ -408,7 +411,7 @@ class DashboardView extends StatelessWidget {
                     children: [
                       const SectionHeader(
                         title: 'Available Courses',
-                        gradient: AppTheme.greenGradient,
+                        accentGradient: AppTheme.greenGradient,
                       ),
                       const SizedBox(height: 14),
                       ...dp.courses.take(4).map((c) {
@@ -537,7 +540,7 @@ class _QuickActionTile extends StatelessWidget {
 }
 
 class _RecentStudentTile extends StatelessWidget {
-  final dynamic student;
+  final Student student;
   const _RecentStudentTile({required this.student});
 
   @override
@@ -548,23 +551,11 @@ class _RecentStudentTile extends StatelessWidget {
       decoration: AppTheme.subtleCard,
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: AppTheme.accentGradient,
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: Center(
-              child: Text(
-                student.name.isNotEmpty ? student.name[0].toUpperCase() : '?',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                ),
-              ),
-            ),
+          InitialsAvatar(
+            text: student.name,
+            size: 44,
+            borderRadius: 13,
+            fontSize: 18,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -592,20 +583,14 @@ class _RecentStudentTile extends StatelessWidget {
               ],
             ),
           ),
-          Container(
+          CountBadge(
+            count: student.enrolledCourseIds.length,
+            singularLabel: 'course',
+            pluralLabel: 'courses',
+            activeColor: AppTheme.accent,
+            fontSize: 11.5,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppTheme.accent.withAlpha(12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              '${student.enrolledCourseIds.length} courses',
-              style: const TextStyle(
-                color: AppTheme.accent,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            borderRadius: 10,
           ),
         ],
       ),
@@ -614,7 +599,7 @@ class _RecentStudentTile extends StatelessWidget {
 }
 
 class _RecentCourseTile extends StatelessWidget {
-  final dynamic course;
+  final Course course;
   final int enrolledCount;
   const _RecentCourseTile({required this.course, required this.enrolledCount});
 
@@ -626,17 +611,12 @@ class _RecentCourseTile extends StatelessWidget {
       decoration: AppTheme.subtleCard,
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: AppTheme.greenGradient,
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: const Center(
-              child: Icon(Icons.auto_stories_rounded,
-                  color: Colors.white, size: 20),
-            ),
+          InitialsAvatar(
+            icon: Icons.auto_stories_rounded,
+            gradient: AppTheme.greenGradient,
+            size: 44,
+            borderRadius: 13,
+            iconSize: 20,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -663,20 +643,14 @@ class _RecentCourseTile extends StatelessWidget {
               ],
             ),
           ),
-          Container(
+          CountBadge(
+            count: enrolledCount,
+            singularLabel: 'student',
+            pluralLabel: 'students',
+            activeColor: AppTheme.success,
+            fontSize: 11.5,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppTheme.success.withAlpha(12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              '$enrolledCount students',
-              style: const TextStyle(
-                color: AppTheme.success,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            borderRadius: 10,
           ),
         ],
       ),

@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../../models/student.dart';
 import '../../providers/data_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/app_snackbar.dart';
+import '../../widgets/app_text_form_field.dart';
+import '../../widgets/form_header_icon.dart';
 
 /// Premium form for adding/editing a student.
 class StudentFormScreen extends StatefulWidget {
@@ -26,7 +29,8 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
     super.initState();
     if (widget.isEditing) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final s = context.read<DataProvider>().getStudentById(widget.studentId!);
+        final s =
+            context.read<DataProvider>().getStudentById(widget.studentId!);
         if (s != null) {
           _name.text = s.name;
           _email.text = s.email;
@@ -62,10 +66,10 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
       dp.addStudent(student);
     }
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(widget.isEditing ? 'Student updated' : 'Student added'),
-      backgroundColor: AppTheme.success,
-    ));
+    showSuccessSnackBar(
+      context,
+      widget.isEditing ? 'Student updated' : 'Student added',
+    );
   }
 
   @override
@@ -81,8 +85,11 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
               color: AppTheme.surfaceLight,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.arrow_back_ios_new_rounded,
-                size: 16, color: AppTheme.textPrimary),
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 16,
+              color: AppTheme.textPrimary,
+            ),
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -95,65 +102,61 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.accentGradient,
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.accent.withAlpha(50),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    widget.isEditing
-                        ? Icons.edit_rounded
-                        : Icons.person_add_alt_1_rounded,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                ),
+              FormHeaderIcon(
+                icon: widget.isEditing
+                    ? Icons.edit_rounded
+                    : Icons.person_add_alt_1_rounded,
+                subtitle: widget.isEditing
+                    ? 'Update Student Details'
+                    : 'Register New Student',
+                gradient: AppTheme.accentGradient,
               ),
-              const SizedBox(height: 10),
-              Center(
-                child: Text(
-                  widget.isEditing ? 'Update Student Details' : 'Register New Student',
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 14),
-                ),
-              ),
-              const SizedBox(height: 32),
 
-              _buildField('Full Name', _name, Icons.person_outline_rounded,
-                  'Enter student name', TextInputType.name,
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Required' : null),
+              AppTextFormField(
+                label: 'Full Name',
+                controller: _name,
+                icon: Icons.person_outline_rounded,
+                hint: 'Enter student name',
+                keyboardType: TextInputType.name,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Required' : null,
+              ),
               const SizedBox(height: 18),
-              _buildField('Email Address', _email, Icons.email_outlined,
-                  'Enter email', TextInputType.emailAddress,
-                  validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Required';
-                if (!RegExp(r'^[\w.\-]+@[\w.\-]+\.\w+$').hasMatch(v.trim())) {
-                  return 'Invalid email';
-                }
-                return null;
-              }),
+              AppTextFormField(
+                label: 'Email Address',
+                controller: _email,
+                icon: Icons.email_outlined,
+                hint: 'Enter email',
+                keyboardType: TextInputType.emailAddress,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Required';
+                  if (!RegExp(r'^[\w.\-]+@[\w.\-]+\.\w+$').hasMatch(v.trim())) {
+                    return 'Invalid email';
+                  }
+                  return null;
+                },
+              ),
               const SizedBox(height: 18),
-              _buildField('Phone Number', _phone, Icons.phone_outlined,
-                  'Enter phone', TextInputType.phone,
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Required' : null),
+              AppTextFormField(
+                label: 'Phone Number',
+                controller: _phone,
+                icon: Icons.phone_outlined,
+                hint: 'Enter phone',
+                keyboardType: TextInputType.phone,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Required' : null,
+              ),
               const SizedBox(height: 18),
-              _buildField('Address', _address, Icons.location_on_outlined,
-                  'Enter address', TextInputType.streetAddress,
-                  maxLines: 3,
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Required' : null),
+              AppTextFormField(
+                label: 'Address',
+                controller: _address,
+                icon: Icons.location_on_outlined,
+                hint: 'Enter address',
+                keyboardType: TextInputType.streetAddress,
+                maxLines: 3,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Required' : null,
+              ),
               const SizedBox(height: 36),
 
               // Save
@@ -162,11 +165,16 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-                child: Text(widget.isEditing ? 'Update Student' : 'Add Student',
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600)),
+                child: Text(
+                  widget.isEditing ? 'Update Student' : 'Add Student',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               const SizedBox(height: 12),
               OutlinedButton(
@@ -177,41 +185,6 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildField(String label, TextEditingController ctrl, IconData icon,
-      String hint, TextInputType type,
-      {int maxLines = 1, String? Function(String?)? validator}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2)),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: ctrl,
-          keyboardType: type,
-          maxLines: maxLines,
-          textCapitalization: type == TextInputType.emailAddress
-              ? TextCapitalization.none
-              : TextCapitalization.words,
-          style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14.5),
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Padding(
-              padding: EdgeInsets.only(bottom: maxLines > 1 ? 40.0 : 0),
-              child: Icon(icon, size: 20),
-            ),
-            alignLabelWithHint: maxLines > 1,
-          ),
-          validator: validator,
-        ),
-      ],
     );
   }
 }

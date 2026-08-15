@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../providers/data_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/confirm_delete_dialog.dart';
+import '../../utils/app_dialogs.dart';
+import '../../utils/app_snackbar.dart';
+import '../../widgets/action_icon_button.dart';
+import '../../widgets/empty_state_view.dart';
+import '../../widgets/info_row_tile.dart';
+import '../../widgets/initials_avatar.dart';
 import '../../widgets/section_header.dart';
 import 'course_form_screen.dart';
 
@@ -57,103 +61,103 @@ class CourseDetailScreen extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: const Icon(
-                                      Icons.arrow_back_ios_new_rounded,
-                                      color: Colors.white,
-                                      size: 16),
+                                    Icons.arrow_back_ios_new_rounded,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
                                 ),
                                 onPressed: () => Navigator.pop(context),
                               ),
-                              Row(children: [
-                                IconButton(
-                                  icon: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withAlpha(20),
-                                      borderRadius: BorderRadius.circular(10),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withAlpha(20),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(
+                                        Icons.edit_rounded,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
                                     ),
-                                    child: const Icon(Icons.edit_rounded,
-                                        color: Colors.white, size: 16),
-                                  ),
-                                  onPressed: () => Navigator.push(
+                                    onPressed: () => Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (_) => CourseFormScreen(
-                                              courseId: course.id))),
-                                ),
-                                IconButton(
-                                  icon: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.error.withAlpha(40),
-                                      borderRadius: BorderRadius.circular(10),
+                                        builder: (_) => CourseFormScreen(
+                                          courseId: course.id,
+                                        ),
+                                      ),
                                     ),
-                                    child: const Icon(
+                                  ),
+                                  IconButton(
+                                    icon: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.error.withAlpha(40),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(
                                         Icons.delete_outline_rounded,
                                         color: Colors.white,
-                                        size: 16),
+                                        size: 16,
+                                      ),
+                                    ),
+                                    onPressed: () =>
+                                        _confirmDelete(context, dp),
                                   ),
-                                  onPressed: () => ConfirmDeleteDialog.show(
-                                    context,
-                                    title: 'Delete Course',
-                                    content:
-                                        'This removes all enrollments too.',
-                                    onConfirm: () {
-                                      dp.deleteCourse(courseId);
-                                      Navigator.pop(context);
-                                    },
-                                  ),
-                                ),
-                              ]),
+                                ],
+                              ),
                             ],
                           ),
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
-                          child: Column(children: [
-                            Container(
-                              width: 72,
-                              height: 72,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withAlpha(20),
-                                borderRadius: BorderRadius.circular(22),
+                          child: Column(
+                            children: [
+                              InitialsAvatar(
+                                icon: Icons.auto_stories_rounded,
+                                size: 72,
+                                borderRadius: 22,
+                                iconSize: 32,
+                                backgroundColor: Colors.white.withAlpha(20),
                                 border: Border.all(
-                                    color: Colors.white.withAlpha(25)),
-                              ),
-                              child: const Center(
-                                child: Icon(Icons.auto_stories_rounded,
-                                    color: Colors.white, size: 32),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            Text(
-                              course.courseName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.3,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withAlpha(16),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                course.courseCode,
-                                style: const TextStyle(
-                                  color: Colors.white60,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.5,
+                                  color: Colors.white.withAlpha(25),
                                 ),
                               ),
-                            ),
-                          ]),
+                              const SizedBox(height: 14),
+                              Text(
+                                course.courseName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.3,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withAlpha(16),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  course.courseCode,
+                                  style: const TextStyle(
+                                    color: Colors.white60,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -171,26 +175,35 @@ class CourseDetailScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Course Information',
-                            style: TextStyle(
-                                color: AppTheme.textPrimary,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700)),
+                        const Text(
+                          'Course Information',
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         const SizedBox(height: 16),
-                        _InfoRow(
-                            icon: Icons.description_outlined,
-                            label: 'Description',
-                            value: course.description),
+                        InfoRowTile(
+                          icon: Icons.description_outlined,
+                          label: 'Description',
+                          value: course.description,
+                          accentColor: AppTheme.success,
+                        ),
                         _divider(),
-                        _InfoRow(
-                            icon: Icons.star_outline_rounded,
-                            label: 'Credits',
-                            value: '${course.credits}'),
+                        InfoRowTile(
+                          icon: Icons.star_outline_rounded,
+                          label: 'Credits',
+                          value: '${course.credits}',
+                          accentColor: AppTheme.success,
+                        ),
                         _divider(),
-                        _InfoRow(
-                            icon: Icons.person_outline_rounded,
-                            label: 'Lecturer',
-                            value: course.lecturer),
+                        InfoRowTile(
+                          icon: Icons.person_outline_rounded,
+                          label: 'Lecturer',
+                          value: course.lecturer,
+                          accentColor: AppTheme.success,
+                        ),
                       ],
                     ),
                   ),
@@ -203,27 +216,18 @@ class CourseDetailScreen extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
                   child: SectionHeader(
                     title: 'Enrolled Students (${students.length})',
-                    gradient: AppTheme.accentGradient,
+                    accentGradient: AppTheme.accentGradient,
+                    fontSize: 16,
                   ),
                 ),
               ),
 
               if (students.isEmpty)
                 const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: Column(children: [
-                      Icon(Icons.people_outline_rounded,
-                          color: AppTheme.textHint, size: 42),
-                      SizedBox(height: 12),
-                      Text('No students enrolled',
-                          style: TextStyle(
-                              color: AppTheme.textSecondary, fontSize: 15)),
-                      SizedBox(height: 4),
-                      Text('Go to Enrollment tab to enroll students',
-                          style: TextStyle(
-                              color: AppTheme.textHint, fontSize: 13)),
-                    ]),
+                  child: EmptyStateView(
+                    icon: Icons.people_outline_rounded,
+                    title: 'No students enrolled',
+                    subtitle: 'Go to Enrollment tab to enroll students',
                   ),
                 )
               else
@@ -237,64 +241,53 @@ class CourseDetailScreen extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(14),
                           decoration: AppTheme.subtleCard,
-                          child: Row(children: [
-                            Container(
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
+                          child: Row(
+                            children: [
+                              InitialsAvatar(
+                                text: s.name,
                                 gradient: AppTheme.accentGradient,
-                                borderRadius: BorderRadius.circular(12),
+                                size: 42,
+                                borderRadius: 12,
+                                fontSize: 16,
                               ),
-                              child: Center(
-                                child: Text(
-                                  s.name.isNotEmpty
-                                      ? s.name[0].toUpperCase()
-                                      : '?',
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      s.name,
+                                      style: const TextStyle(
+                                        color: AppTheme.textPrimary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    Text(
+                                      s.id,
+                                      style: const TextStyle(
+                                        color: AppTheme.textHint,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(s.name,
-                                      style: const TextStyle(
-                                          color: AppTheme.textPrimary,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14)),
-                                  Text(s.id,
-                                      style: const TextStyle(
-                                          color: AppTheme.textHint,
-                                          fontSize: 12)),
-                                ],
-                              ),
-                            ),
-                            Material(
-                              color: Colors.transparent,
-                              child: InkWell(
+                              ActionIconButton(
+                                icon: Icons.remove_circle_outline_rounded,
+                                color: AppTheme.error.withAlpha(180),
+                                size: 20,
+                                tooltip: 'Unenroll',
                                 onTap: () {
                                   dp.unenrollStudentFromCourse(s.id, courseId);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content:
-                                              Text('${s.name} unenrolled')));
+                                  showSuccessSnackBar(
+                                    context,
+                                    '${s.name} unenrolled',
+                                  );
                                 },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(6),
-                                  child: Icon(
-                                      Icons.remove_circle_outline_rounded,
-                                      color: AppTheme.error.withAlpha(180),
-                                      size: 20),
-                                ),
                               ),
-                            ),
-                          ]),
+                            ],
+                          ),
                         ),
                       );
                     },
@@ -314,51 +307,17 @@ class CourseDetailScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Divider(color: AppTheme.dividerColor.withAlpha(120)),
       );
-}
 
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _InfoRow(
-      {required this.icon, required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppTheme.success.withAlpha(12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: AppTheme.success),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
-                    style: const TextStyle(
-                        color: AppTheme.textHint,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.3)),
-                const SizedBox(height: 3),
-                Text(value,
-                    style: const TextStyle(
-                        color: AppTheme.textPrimary, fontSize: 14.5)),
-              ],
-            ),
-          ),
-        ],
-      ),
+  void _confirmDelete(BuildContext context, DataProvider dp) {
+    showDeleteConfirmDialog(
+      context: context,
+      title: 'Delete Course',
+      message: 'This removes all enrollments too.',
+      onConfirm: () {
+        dp.deleteCourse(courseId);
+        Navigator.pop(context);
+        showErrorSnackBar(context, 'Course deleted');
+      },
     );
   }
 }

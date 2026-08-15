@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import '../../models/course.dart';
 import '../../providers/data_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/confirm_delete_dialog.dart';
-import '../../widgets/custom_search_bar.dart';
+import '../../utils/app_dialogs.dart';
+import '../../utils/app_snackbar.dart';
+import '../../widgets/action_icon_button.dart';
+import '../../widgets/count_badge.dart';
 import '../../widgets/empty_state_view.dart';
-import 'course_detail_screen.dart';
+import '../../widgets/gradient_search_header.dart';
+import '../../widgets/initials_avatar.dart';
 import 'course_form_screen.dart';
+import 'course_detail_screen.dart';
 
-/// Course list screen utilizing modular widgets (SRP / SOLID).
+/// Course list screen utilizing modular widgets (SRP / DRY).
 class CourseListScreen extends StatefulWidget {
   const CourseListScreen({super.key});
 
@@ -38,93 +42,37 @@ class _CourseListScreenState extends State<CourseListScreen> {
           body: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // ─── Header ───
-              SliverToBoxAdapter(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF065F46), Color(0xFF0D9F6F)],
-                    ),
-                  ),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withAlpha(20),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(Icons.auto_stories_rounded,
-                                    color: Colors.white, size: 22),
-                              ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                'Courses',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                              const Spacer(),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withAlpha(20),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  '${dp.courses.length} total',
-                                  style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 18),
-                          // Reusable Custom Search Bar
-                          CustomSearchBar(
-                            controller: _searchController,
-                            hintText: 'Search by name, code or lecturer...',
-                            onChanged: (v) => setState(() => _searchQuery = v),
-                            onClear: () {
-                              _searchController.clear();
-                              setState(() => _searchQuery = '');
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+              // ─── Reusable Gradient Search Header ───
+              SliverGradientSearchHeader(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF065F46), Color(0xFF0D9F6F)],
                 ),
+                icon: Icons.auto_stories_rounded,
+                title: 'Courses',
+                totalCount: dp.courses.length,
+                searchController: _searchController,
+                searchHint: 'Search by name, code or lecturer...',
+                onSearchChanged: (v) => setState(() => _searchQuery = v),
               ),
 
+              // ─── Results Label ───
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
                   child: Text(
                     '${courses.length} course${courses.length != 1 ? 's' : ''} found',
                     style: const TextStyle(
-                        color: AppTheme.textHint,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500),
+                      color: AppTheme.textHint,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
 
+              // ─── List / Empty ───
               if (courses.isEmpty)
                 SliverFillRemaining(
                   child: EmptyStateView(
@@ -152,29 +100,20 @@ class _CourseListScreenState extends State<CourseListScreen> {
                           course: c,
                           enrolledCount: enrolled,
                           onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) =>
-                                      CourseDetailScreen(courseId: c.id))),
-                          onEdit: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) =>
-                                      CourseFormScreen(courseId: c.id))),
-                          onDelete: () => ConfirmDeleteDialog.show(
                             context,
-                            title: 'Delete Course',
-                            content:
-                                'Delete "${c.courseName}"? This removes all enrollments too.',
-                            onConfirm: () {
-                              dp.deleteCourse(c.id);
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                content: Text('${c.courseName} deleted'),
-                                backgroundColor: AppTheme.error,
-                              ));
-                            },
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  CourseDetailScreen(courseId: c.id),
+                            ),
                           ),
+                          onEdit: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  CourseFormScreen(courseId: c.id),
+                            ),
+                          ),
+                          onDelete: () => _confirmDelete(context, dp, c),
                         ),
                       );
                     },
@@ -188,18 +127,32 @@ class _CourseListScreenState extends State<CourseListScreen> {
           floatingActionButton: FloatingActionButton(
             heroTag: 'add_course',
             backgroundColor: AppTheme.success,
-            onPressed: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const CourseFormScreen())),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CourseFormScreen()),
+            ),
             child: const Icon(Icons.add_rounded, size: 28),
           ),
         );
       },
     );
   }
+
+  void _confirmDelete(BuildContext context, DataProvider dp, Course c) {
+    showDeleteConfirmDialog(
+      context: context,
+      title: 'Delete Course',
+      message: 'Delete "${c.courseName}"? This removes all enrollments too.',
+      onConfirm: () {
+        dp.deleteCourse(c.id);
+        showErrorSnackBar(context, '${c.courseName} deleted');
+      },
+    );
+  }
 }
 
 class _CourseCard extends StatelessWidget {
-  final dynamic course;
+  final Course course;
   final int enrolledCount;
   final VoidCallback onTap;
   final VoidCallback onEdit;
@@ -222,17 +175,12 @@ class _CourseCard extends StatelessWidget {
         decoration: AppTheme.subtleCard,
         child: Row(
           children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                gradient: AppTheme.greenGradient,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Center(
-                child: Icon(Icons.auto_stories_rounded,
-                    color: Colors.white, size: 22),
-              ),
+            InitialsAvatar(
+              icon: Icons.auto_stories_rounded,
+              gradient: AppTheme.greenGradient,
+              size: 50,
+              borderRadius: 14,
+              iconSize: 22,
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -260,19 +208,33 @@ class _CourseCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Row(
                     children: [
-                      const Icon(Icons.person_outline_rounded,
-                          size: 13, color: AppTheme.textHint),
+                      const Icon(
+                        Icons.person_outline_rounded,
+                        size: 13,
+                        color: AppTheme.textHint,
+                      ),
                       const SizedBox(width: 4),
-                      Text(course.lecturer,
-                          style: const TextStyle(
-                              color: AppTheme.textHint, fontSize: 12)),
+                      Text(
+                        course.lecturer,
+                        style: const TextStyle(
+                          color: AppTheme.textHint,
+                          fontSize: 12,
+                        ),
+                      ),
                       const SizedBox(width: 10),
-                      const Icon(Icons.star_outline_rounded,
-                          size: 13, color: AppTheme.textHint),
+                      const Icon(
+                        Icons.star_outline_rounded,
+                        size: 13,
+                        color: AppTheme.textHint,
+                      ),
                       const SizedBox(width: 3),
-                      Text('${course.credits}',
-                          style: const TextStyle(
-                              color: AppTheme.textHint, fontSize: 12)),
+                      Text(
+                        '${course.credits}',
+                        style: const TextStyle(
+                          color: AppTheme.textHint,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -281,68 +243,34 @@ class _CourseCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: enrolledCount > 0
-                        ? AppTheme.accent.withAlpha(12)
-                        : AppTheme.surfaceLight,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '$enrolledCount students',
-                    style: TextStyle(
-                      color: enrolledCount > 0
-                          ? AppTheme.accent
-                          : AppTheme.textHint,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                CountBadge(
+                  count: enrolledCount,
+                  singularLabel: 'student',
+                  pluralLabel: 'students',
+                  activeColor: AppTheme.accent,
                 ),
                 const SizedBox(height: 10),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _ActionBtn(
-                        icon: Icons.edit_outlined,
-                        color: AppTheme.accent,
-                        onTap: onEdit),
+                    ActionIconButton(
+                      icon: Icons.edit_outlined,
+                      color: AppTheme.accent,
+                      onTap: onEdit,
+                      tooltip: 'Edit',
+                    ),
                     const SizedBox(width: 2),
-                    _ActionBtn(
-                        icon: Icons.delete_outline_rounded,
-                        color: AppTheme.error,
-                        onTap: onDelete),
+                    ActionIconButton(
+                      icon: Icons.delete_outline_rounded,
+                      color: AppTheme.error,
+                      onTap: onDelete,
+                      tooltip: 'Delete',
+                    ),
                   ],
                 ),
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ActionBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _ActionBtn(
-      {required this.icon, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Icon(icon, size: 19, color: color),
         ),
       ),
     );
