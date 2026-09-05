@@ -28,27 +28,45 @@ void main() {
   runApp(const BCIManagementApp());
 }
 
-class BCIManagementApp extends StatelessWidget {
+/// Root widget for the BCI Campus Management System.
+class BCIManagementApp extends StatefulWidget {
   const BCIManagementApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<BCIManagementApp> createState() => _BCIManagementAppState();
+}
+
+class _BCIManagementAppState extends State<BCIManagementApp> {
+  late final DataProvider _dataProvider;
+
+  @override
+  void initState() {
+    super.initState();
     // ─── Dependency Composition Root (SOLID & MVC) ───
     final studentRepo = InMemoryStudentRepository();
     final courseRepo = InMemoryCourseRepository();
     final enrollmentRepo =
         InMemoryEnrollmentRepository(studentRepository: studentRepo);
 
-    final dataProvider = DataProvider(
+    _dataProvider = DataProvider(
       studentRepo: studentRepo,
       courseRepo: courseRepo,
       enrollmentRepo: enrollmentRepo,
     )..loadSampleData();
+  }
 
+  @override
+  void dispose() {
+    _dataProvider.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<DataProvider>.value(value: dataProvider),
-        ChangeNotifierProvider<AppController>.value(value: dataProvider),
+        ChangeNotifierProvider<DataProvider>.value(value: _dataProvider),
+        ListenableProvider<AppController>.value(value: _dataProvider),
       ],
       child: MaterialApp(
         title: 'BCI Campus Management System',

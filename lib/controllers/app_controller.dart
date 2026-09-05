@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/course.dart';
 import '../models/student.dart';
+import '../repositories/implementations/in_memory_course_repository.dart';
+import '../repositories/implementations/in_memory_enrollment_repository.dart';
+import '../repositories/implementations/in_memory_student_repository.dart';
 import '../repositories/interfaces/course_repository_interface.dart';
 import '../repositories/interfaces/enrollment_repository_interface.dart';
 import '../repositories/interfaces/student_repository_interface.dart';
@@ -22,15 +25,30 @@ class AppController extends ChangeNotifier {
   final IEnrollmentRepository enrollmentRepo;
 
   AppController({
-    required this.studentRepo,
-    required this.courseRepo,
-    required this.enrollmentRepo,
-  })  : studentController = StudentController(studentRepository: studentRepo),
+    IStudentRepository? studentRepo,
+    ICourseRepository? courseRepo,
+    IEnrollmentRepository? enrollmentRepo,
+  }) : this.raw(
+          studentRepo: studentRepo ?? InMemoryStudentRepository(),
+          courseRepo: courseRepo ?? InMemoryCourseRepository(),
+          enrollmentRepo: enrollmentRepo,
+        );
+
+  AppController.raw({
+    required IStudentRepository studentRepo,
+    required ICourseRepository courseRepo,
+    IEnrollmentRepository? enrollmentRepo,
+  })  : studentRepo = studentRepo,
+        courseRepo = courseRepo,
+        enrollmentRepo = enrollmentRepo ??
+            InMemoryEnrollmentRepository(studentRepository: studentRepo),
+        studentController = StudentController(studentRepository: studentRepo),
         courseController = CourseController(courseRepository: courseRepo),
         enrollmentController = EnrollmentController(
           studentRepository: studentRepo,
           courseRepository: courseRepo,
-          enrollmentRepository: enrollmentRepo,
+          enrollmentRepository: enrollmentRepo ??
+              InMemoryEnrollmentRepository(studentRepository: studentRepo),
         ) {
     // Listen to child controllers to cascade notifications to views
     studentController.addListener(notifyListeners);
@@ -130,6 +148,8 @@ class AppController extends ChangeNotifier {
       enrollmentRepo: enrollmentRepo,
     );
     sampleService.seedInitialData();
-    notifyListeners();
+    if (hasListeners) {
+      notifyListeners();
+    }
   }
 }

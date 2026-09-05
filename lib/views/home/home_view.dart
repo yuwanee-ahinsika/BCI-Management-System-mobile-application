@@ -226,6 +226,7 @@ class DashboardView extends StatelessWidget {
                               width: 52,
                               height: 52,
                               decoration: BoxDecoration(
+                                gradient: AppTheme.primaryGradient,
                                 borderRadius: BorderRadius.circular(15),
                                 boxShadow: [
                                   BoxShadow(
@@ -235,12 +236,10 @@ class DashboardView extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(15),
-                                child: Image.asset(
-                                  'assets/images/bci_logo.png',
-                                  fit: BoxFit.cover,
-                                ),
+                              child: const Icon(
+                                Icons.school_rounded,
+                                color: Colors.white,
+                                size: 28,
                               ),
                             ),
                             const SizedBox(width: 14),
